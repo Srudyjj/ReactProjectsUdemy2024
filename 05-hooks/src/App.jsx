@@ -1,19 +1,20 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import './App.css'
 import MagicNumber from './components/MagicNumber'
 import SingUpToNewsLetter from './components/SingUpToNewsLetter'
 import MemoHook from './components/MemoHook'
 import Parent from './components/Memo/Parent'
+import List from './components/Zoo/List'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
       {/* <MagicNumber /> */}
       {/* <SingUpToNewsLetter /> */}
       {/* <MemoHook /> */}
-      <Parent />
+      {/* <Parent /> */}
+      <List />
     </>
   )
 }
