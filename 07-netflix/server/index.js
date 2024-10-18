@@ -7,6 +7,7 @@ app.use(cors())
 
 app.use("", require("./routes/movies"))
 app.use("/auth", require("./routes/auth"))
+app.use("/sub", require("./routes/sub"))
 
 app.listen(8080, () => {
   console.log("Now listening on PORT 8080");

@@ -4,32 +4,34 @@ import MovieList from "../components/MovieList";
 import useMoviesList from "../hooks/useMoviesList";
 import { useState, useRef, useCallback } from "react";
 import LoadingCards from "../components/LoadingCards";
+import { Navigate } from "react-router-dom";
 
 export default function BrowsePage() {
-
   const [offset, setOffset] = useState(0);
   const { data, error, loading } = useMoviesList(offset);
 
   const observer = useRef<null | IntersectionObserver>(null);
 
-  const lastElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (loading) return;
 
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver((entries) => {
-      console.log(entries);
-      
-      if (entries[0].isIntersecting) {
-        setOffset(offset + 12);
-        console.log("intersecting");
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        console.log(entries);
 
-      }
-    })
+        if (entries[0].isIntersecting) {
+          setOffset(offset + 12);
+          console.log("intersecting");
+        }
+      });
 
-    if (node) observer.current.observe(node)
+      if (node) observer.current.observe(node);
+    },
+    [loading]
+  );
 
-  }, [loading])
-
+  if (error === "Unauthorized; no plan") return <Navigate to="/plans" />;
 
   return (
     <div>

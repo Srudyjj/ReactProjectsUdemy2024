@@ -1,10 +1,19 @@
 import { useEffect, useReducer } from "react";
 import axios from "axios";
-import { Movie } from "../types.ts";
-import Cookies from "universal-cookie";
+
+export interface Plan {
+  id: string;
+  name: string;
+  canDownload: boolean;
+  canWatchSouth: boolean;
+  price: {
+    amount: number;
+    id: string;
+  };
+}
 
 interface State {
-  data: Movie | null;
+  data: Plan[] | null;
   error: string | null;
   loading: boolean;
 }
@@ -23,10 +32,9 @@ enum ActionType {
 
 type Action =
   | { type: ActionType.LOADING }
-  | { type: ActionType.SUCCESS; payload: Movie }
+  | { type: ActionType.SUCCESS; payload: Plan[] }
   | { type: ActionType.FAILED; payload: string };
 
-const cookie = new Cookies();
 const reducer = (_: State, action: Action): State => {
   switch (action.type) {
     case ActionType.LOADING:
@@ -52,39 +60,29 @@ const reducer = (_: State, action: Action): State => {
   }
 };
 
-const useMovie = (id: string) => {
+const usePlans = () => {
   const [{ data, loading, error }, dispatch] = useReducer(
     reducer,
     initialState
   );
 
   useEffect(() => {
-    fetchMovie();
+    fetchPlansList();
   }, []);
 
-  const fetchMovie = async () => {
+  const fetchPlansList = async () => {
     dispatch({ type: ActionType.LOADING });
     try {
-      const sessionToken = cookie.get("session_token");
-      const response = await axios.get(`http://localhost:8080/movie/${id}`, {
-        headers: {
-          ...(sessionToken
-            ? { Authorization: `Bearer ${sessionToken}` }
-            : null),
-        },
-      });
+      const response = await axios.get("http://localhost:8080/sub/products");
 
       dispatch({ type: ActionType.SUCCESS, payload: response.data });
-    } catch (error: any) {
+    } catch (error) {
       console.log(error);
-      dispatch({
-        type: ActionType.FAILED,
-        payload: error?.response?.data?.errors[0].msg,
-      });
+      dispatch({ type: ActionType.FAILED, payload: "Something went wrong" });
     }
   };
 
   return { data, loading, error };
 };
 
-export default useMovie;
+export default usePlans;

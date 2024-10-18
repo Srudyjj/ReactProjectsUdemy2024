@@ -1,18 +1,24 @@
-import { useEffect, useReducer, useState } from "react";
+import { useReducer } from "react";
 import axios from "axios";
-import { Movie } from "../types.ts";
 import Cookies from "universal-cookie";
 
+export interface Subscription {
+  id: string;
+  name: string;
+}
+
 interface State {
-  data: Movie[] | null;
+  data: Subscription | null;
   error: string | null;
   loading: boolean;
 }
 
+const cookie = new Cookies();
+
 const initialState: State = {
   data: null,
   error: null,
-  loading: false,
+  loading: true,
 };
 
 enum ActionType {
@@ -23,16 +29,14 @@ enum ActionType {
 
 type Action =
   | { type: ActionType.LOADING }
-  | { type: ActionType.SUCCESS; payload: Movie[] }
+  | { type: ActionType.SUCCESS; payload: Subscription }
   | { type: ActionType.FAILED; payload: string };
 
-const cookie = new Cookies();
-
-const reducer = (state: State, action: Action): State => {
+const reducer = (_: State, action: Action): State => {
   switch (action.type) {
     case ActionType.LOADING:
       return {
-        ...state,
+        data: null,
         error: null,
         loading: true,
       };
@@ -53,25 +57,28 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-const useMoviesList = (offset: number) => {
+type UseSubscription = () => [
+  {
+    data: Subscription | null;
+    loading: boolean;
+    error: string | null;
+  },
+  () => Promise<Subscription>
+];
+
+const useSubscriptions: UseSubscription = () => {
   const [{ data, loading, error }, dispatch] = useReducer(
     reducer,
     initialState
   );
 
-  const [count, setCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetchMoviesList();
-  }, [offset]);
-
-  const fetchMoviesList = async () => {
-    if (data && count && data.length >= count) return;
+  const fetchSubscriptions = async () => {
     dispatch({ type: ActionType.LOADING });
+
+    const sessionToken = cookie.get("session_token");
     try {
-      const sessionToken = cookie.get("session_token");
       const response = await axios.get(
-        `http://localhost:8080/movies/list?offset=${offset}`,
+        "http://localhost:8080/sub/subscription",
         {
           headers: {
             ...(sessionToken
@@ -80,20 +87,16 @@ const useMoviesList = (offset: number) => {
           },
         }
       );
-      const moviesData = data
-        ? [...data, ...response.data.movies]
-        : response.data.movies;
-      setCount(response.data.count);
-      dispatch({ type: ActionType.SUCCESS, payload: moviesData });
-    } catch (error: any) {
-      dispatch({
-        type: ActionType.FAILED,
-        payload: error?.response?.data?.errors[0].msg,
-      });
+
+      dispatch({ type: ActionType.SUCCESS, payload: response.data });
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      dispatch({ type: ActionType.FAILED, payload: "Something went wrong" });
     }
   };
 
-  return { data, loading, error };
+  return [{ data, loading, error }, fetchSubscriptions];
 };
 
-export default useMoviesList;
+export default useSubscriptions;

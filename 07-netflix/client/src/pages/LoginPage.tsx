@@ -7,6 +7,8 @@ import {
   UseFormRegister,
   FieldErrors,
 } from "react-hook-form";
+import useAuth from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export type Inputs = {
   email: string;
@@ -36,10 +38,42 @@ export default function LoginPage() {
     formState: { errors },
     getValues,
   } = useForm<Inputs>();
+
   const [variant, setVariant] = useState(Variant.LOGIN_IN);
-  console.log(errors);
-  const onSubmit: SubmitHandler<Inputs> = (data) => {
-    console.log(data);
+  const [authError, setAuthError] = useState("");
+
+  const { signup, login } = useAuth();
+
+  const navigate = useNavigate();
+
+  const onSubmit: SubmitHandler<Inputs> = async ({ password, email, name }) => {
+    try {
+      if (variant === Variant.SIGN_UP) {
+        const response = await signup({
+          email,
+          password,
+          username: name,
+        });
+        console.log(response);
+      } else {
+        const response = await login({
+          email,
+          password,
+        });
+        console.log(response);
+      }
+      setAuthError("");
+      navigate("/browse");
+    } catch (error: any) {
+      setAuthError(error.response.data.errors.msg);
+    }
+  };
+
+  const handleChangeAuthVariant = () => {
+    if (variant === Variant.LOGIN_IN) setVariant(Variant.SIGN_UP);
+    else setVariant(Variant.LOGIN_IN);
+
+    setAuthError("");
   };
 
   return (
@@ -47,7 +81,9 @@ export default function LoginPage() {
       <NavBar />
       <div className="flex justify-center items-center h-full">
         <div className="bg-black bg-opacity-70 p-16 self-center mt-2 w-full max-w-md rounded-md">
-          <h2 className="text-white text-4xl mb-8 font-semibold">Sign in</h2>
+          <h2 className="text-white text-4xl mb-8 font-semibold">
+            {variant === Variant.SIGN_UP ? "Sign up" : "Log in"}
+          </h2>
           <AuthFormContext.Provider
             value={{
               register,
@@ -97,12 +133,13 @@ export default function LoginPage() {
                 type="submit"
                 className="bg-red-400 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700"
               />
+              {authError && <p className="text-red-500">{authError}</p>}
             </form>
           </AuthFormContext.Provider>
           {variant === Variant.LOGIN_IN ? (
             <p
               className="text-neutral-500 mt-12"
-              onClick={() => setVariant(Variant.SIGN_UP)}
+              onClick={handleChangeAuthVariant}
             >
               <span className="text-white ml-1 hover:underline cursor-pointer">
                 First time using Netflix?
@@ -111,7 +148,7 @@ export default function LoginPage() {
           ) : (
             <p
               className="text-neutral-500 mt-12"
-              onClick={() => setVariant(Variant.LOGIN_IN)}
+              onClick={handleChangeAuthVariant}
             >
               <span className="text-white ml-1 hover:underline cursor-pointer">
                 Already have an account?
